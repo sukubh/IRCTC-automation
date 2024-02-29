@@ -10,23 +10,34 @@ let details = require('./env');
         ]
     });
     const page = await browser.newPage();
-    await page.goto('https://www.irctc.co.in/nget/train-search');
+   
     
     try {
-
+        await page.goto('https://www.irctc.co.in/nget/train-search');
         // login
         await login(page)
         
         // insert train detail 
-        // await searchTrain(page)
         await searchTrainAfterLogin(page)
-
-        // seting the Date
+    
+        // setting the Date
         await setdate(page)
 
-        await dataFill(page)
-
-
+        const now = new Date();
+        let millisTill11 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 11, 0, 1, 0) - now;
+        if (millisTill11 < 0) {
+             // it's after 11am, schedule for next day
+             millisTill11 += 24 * 60 * 60 * 1000;
+        }
+    
+        setTimeout(async function() {
+            try {
+                await dataFill(page)
+            } catch (error) {
+                console.log("timer err-->", error);
+            }
+        }, millisTill11);
+    
     } catch (error) {
         console.log("main err-->", error);
     }
@@ -47,32 +58,47 @@ const dataFill = async(page) => {
         return -1
     }, details); 
     console.log('found the train', val);
-    // document.querySelector('div[class="ng-star-inserted"]:nth-child(' + (1 + 1) + ') > div[class="form-group no-pad col-xs-12 bull-back border-all"] div[style="padding: 5px 0;"]');
-    await page.waitForSelector('div[class="ng-star-inserted"]:nth-child(' + (val + 1) + ') > div[class="form-group no-pad col-xs-12 bull-back border-all"] div[tabindex="0"]');
-    await page.click('div[class="ng-star-inserted"]:nth-child(' + (val + 1) + ') > div[class="form-group no-pad col-xs-12 bull-back border-all"] div[tabindex="0"]')
+
+    if(details.sleeper) {
+        // selecting sleeper
+        await page.waitForSelector('div[class="ng-star-inserted"]:nth-child(' + (val + 1) + ') > div[class="form-group no-pad col-xs-12 bull-back border-all"] div[tabindex="0"]');
+        await page.click('div[class="ng-star-inserted"]:nth-child(' + (val + 1) + ') > div[class="form-group no-pad col-xs-12 bull-back border-all"] div[tabindex="0"]')
+    } else {
+        // selecting for AC 3
+        await page.waitForSelector('div[class="ng-star-inserted"]:nth-child(' + (val + 1) + ') > div[class="form-group no-pad col-xs-12 bull-back border-all"]  td[style="padding-right: 6px; padding-bottom: 6px;"]:nth-child(2)');
+        await page.click('div[class="ng-star-inserted"]:nth-child(' + (val + 1) + ') > div[class="form-group no-pad col-xs-12 bull-back border-all"]  td[style="padding-right: 6px; padding-bottom: 6px;"]:nth-child(2)')
+    }
+
+    // await page.waitForSelector('div[class="ng-star-inserted"]:nth-child(' + (val + 1) + ') > div[class="form-group no-pad col-xs-12 bull-back border-all"]  td[style="padding-right: 6px; padding-bottom: 6px;"]:nth-child(3)');
+    // await page.click('div[class="ng-star-inserted"]:nth-child(' + (val + 1) + ') > div[class="form-group no-pad col-xs-12 bull-back border-all"]  td[style="padding-right: 6px; padding-bottom: 6px;"]:nth-child(3)')
+    
+    // selection of set
     await new Promise(resolve => setTimeout(resolve, 1000));
-    await page.waitForSelector('div[class="ng-star-inserted"]:nth-child(' + (val + 1) + ') > div[class="form-group no-pad col-xs-12 bull-back border-all"] div[style="padding: 5px 0;"]');
+    await page.waitForSelector('div[class="ng-star-inserted"]:nth-child(' + (val + 1) + ') > div[class="form-group no-pad col-xs-12 bull-back border-all"] div[style="padding: 5px 0;"]', {timeout: 50000});
     await page.click('div[class="ng-star-inserted"]:nth-child(' + (val + 1) + ') > div[class="form-group no-pad col-xs-12 bull-back border-all"] div[style="padding: 5px 0;"]')
 
+
+    // clicking book button
     await page.waitForSelector('div[class="ng-star-inserted"]:nth-child(' + (val + 1) + ') > div[class="form-group no-pad col-xs-12 bull-back border-all"] button[class="btnDefault train_Search ng-star-inserted"]');
     await page.click('div[class="ng-star-inserted"]:nth-child(' + (val + 1) + ') > div[class="form-group no-pad col-xs-12 bull-back border-all"] button[class="btnDefault train_Search ng-star-inserted"]')
     
     // selection passenger
     await new Promise(resolve => setTimeout(resolve, 1000));
-    await page.waitForSelector('ul.ui-autocomplete-items.ui-autocomplete-list.ui-widget-content.ui-widget.ui-corner-all.ui-helper-reset >  li:nth-child(1)');
-    await page.click('ul.ui-autocomplete-items.ui-autocomplete-list.ui-widget-content.ui-widget.ui-corner-all.ui-helper-reset >  li:nth-child(1)')
+    await page.waitForSelector('ul.ui-autocomplete-items.ui-autocomplete-list.ui-widget-content.ui-widget.ui-corner-all.ui-helper-reset >  li:nth-child(5)');
+    await page.click('ul.ui-autocomplete-items.ui-autocomplete-list.ui-widget-content.ui-widget.ui-corner-all.ui-helper-reset >  li:nth-child(5)')
 
-    // clicking Add passenger
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    await page.waitForSelector('div[class="zeroPadding pull-left ng-star-inserted"] > a[tabindex="0"]')
-    await page.click('div[class="zeroPadding pull-left ng-star-inserted"] > a[tabindex="0"]')
+    // // clicking Add passenger
+    // await new Promise(resolve => setTimeout(resolve, 1000));
+    // await page.waitForSelector('div[class="zeroPadding pull-left ng-star-inserted"] > a[tabindex="0"]')
+    // await page.click('div[class="zeroPadding pull-left ng-star-inserted"] > a[tabindex="0"]')
 
-    // selection passenger
-    await page.waitForSelector('ul.ui-autocomplete-items.ui-autocomplete-list.ui-widget-content.ui-widget.ui-corner-all.ui-helper-reset > li:nth-child(' + ( 4 ) + ')');
-    await page.click('ul.ui-autocomplete-items.ui-autocomplete-list.ui-widget-content.ui-widget.ui-corner-all.ui-helper-reset > li:nth-child(' + ( 4 ) + ')')
+    // // selection passenger
+    // await page.waitForSelector('ul.ui-autocomplete-items.ui-autocomplete-list.ui-widget-content.ui-widget.ui-corner-all.ui-helper-reset > li:nth-child(' + ( 4 ) + ')');
+    // await page.click('ul.ui-autocomplete-items.ui-autocomplete-list.ui-widget-content.ui-widget.ui-corner-all.ui-helper-reset > li:nth-child(' + ( 4 ) + ')')
 
     // clicking payment methode and continue
-    await page.click('div[aria-checked="false"]')
+    await page.waitForSelector('div.ui-panel-content.ui-widget-content  div[class="ui-radiobutton-box ui-widget ui-state-default"]')
+    await page.click('div.ui-panel-content.ui-widget-content  div[class="ui-radiobutton-box ui-widget ui-state-default"]')
     await page.click('button[class="train_Search btnDefault"]')
 
     //
@@ -80,23 +106,21 @@ const dataFill = async(page) => {
     console.log('Please fill in the CAPTCHA 2.');
 
     // Wait for user to fill in the CAPTCHA manually
+    await page.waitForSelector('div[class="form-group col-xs-12 hidden-xs"]  button[class="btnDefault train_Search"]', {timeout: 60000});
     await page.evaluate(() => {
-        const button = document.querySelector('button[class="btnDefault train_Search"]');
-        if(button) {
-            button.addEventListener('click', () => {
-                button.clicked = true;
-                resolve();
-            });
-        } else {
-            console.log('Button not found');
-        }
+        const button = document.querySelector('div[class="form-group col-xs-12 hidden-xs"]  button[class="btnDefault train_Search"]');
+        button.addEventListener('click', () => {
+            button.clicked = true;
+            resolve();
+        });
     });
 
     console.log('CAPTCHA is filled 2');
 
     await new Promise(resolve => setTimeout(resolve, 1000));
-    await page.waitForSelector('div[id="pay-type"] > span > div.bank-type:nth-child(3)');
+    await page.waitForSelector('div[id="pay-type"] > span > div.bank-type:nth-child(3)', {timeout: 60000});
     await page.click('div[id="pay-type"] > span > div.bank-type:nth-child(3)')
+    await page.waitForSelector('td[class="col-lg-12 col-md-12 col-pad col-sm-12 col-xs-12 pull-left"]', {timeout: 60000});
     await page.click('td[class="col-lg-12 col-md-12 col-pad col-sm-12 col-xs-12 pull-left"]')
 
     // await page.click('button[class="btn btn-primary hidden-xs ng-star-inserted"]')
